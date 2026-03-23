@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>MindEase+ 🌿</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+
+<style>
+body { font-family: 'Poppins', sans-serif; }
+
+.blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.4;
+  animation: float 10s infinite ease-in-out;
+}
+.blob1 { width: 300px; height: 300px; background: #a78bfa; top: 10%; left: 10%; }
+.blob2 { width: 250px; height: 250px; background: #60a5fa; top: 50%; left: 60%; }
+.blob3 { width: 200px; height: 200px; background: #f472b6; top: 70%; left: 20%; }
+
+@keyframes float {
+  0%,100%{transform:translateY(0);}
+  50%{transform:translateY(-30px);}
+}
+
+.card {
+  background: rgba(255,255,255,0.6);
+  backdrop-filter: blur(20px);
+  border-radius: 20px;
+  padding: 20px;
+}
+</style>
+</head>
+
+<body class="bg-gradient-to-br from-purple-100 via-blue-100 to-pink-100 min-h-screen">
+
+<div class="blob blob1"></div>
+<div class="blob blob2"></div>
+<div class="blob blob3"></div>
+
+<div class="max-w-5xl mx-auto p-6">
+
+<h1 class="text-3xl mb-4">🌿 MindEase+</h1>
+
+<!-- GRID -->
+<div class="grid md:grid-cols-2 gap-4">
+
+<!-- INPUT -->
+<div class="card">
+<h2 class="mb-2">🧠 How was your day?</h2>
+<textarea id="dayInput" class="w-full p-3 rounded"></textarea>
+<button onclick="analyzeDay()" class="mt-2 bg-purple-500 text-white px-4 py-2 rounded">Analyze</button>
+<p id="detectedMood"></p>
+</div>
+
+<!-- JOURNAL -->
+<div class="card">
+<h2 class="mb-2">📝 Journal</h2>
+<textarea id="journal" class="w-full p-3 rounded" placeholder="Write your thoughts..."></textarea>
+</div>
+
+<!-- 💬 AFFIRMATIONS -->
+<div class="card text-center">
+<h2 class="mb-2">💬 Affirmations</h2>
+<p id="quote">Click below 💙</p>
+<button onclick="newQuote()" class="mt-2 bg-green-400 text-white px-4 py-2 rounded">Inspire Me</button>
+</div>
+
+<!-- 🔋 BATTERY -->
+<div class="card text-center">
+<h2>🔋 Mood Battery</h2>
+<div class="w-40 h-16 border-4 mx-auto relative">
+  <div id="batteryFill" class="h-full w-1/2 bg-blue-400"></div>
+  <div class="absolute -right-3 top-4 w-2 h-6 bg-black"></div>
+</div>
+<p id="batteryText">50%</p>
+</div>
+
+</div>
+
+<!-- 🎥 PLAYER -->
+<div class="card mt-4 text-center">
+<h2>🎥 Now Playing</h2>
+<iframe id="videoFrame" width="100%" height="220"
+src="https://www.youtube.com/embed/5qap5aO4i9A"
+allowfullscreen></iframe>
+</div>
+
+<!-- 🎵 PLAYLIST -->
+<div class="card mt-4">
+<h2 class="mb-3">🎧 Playlist</h2>
+<div id="playlist" class="grid grid-cols-2 gap-3"></div>
+</div>
+
+</div>
+
+<script>
+
+// 💬 AFFIRMATIONS
+const quotes = [
+  "You are stronger than you think 💪",
+  "This moment will pass 🌤️",
+  "You are enough 💙",
+  "Small steps matter 👣",
+  "You’re doing better than you realize 🌸"
+];
+
+function newQuote() {
+  document.getElementById("quote").innerText =
+    quotes[Math.floor(Math.random() * quotes.length)];
+}
+
+// 📝 JOURNAL SAVE
+const journal = document.getElementById("journal");
+journal.value = localStorage.getItem("journal") || "";
+journal.oninput = () => localStorage.setItem("journal", journal.value);
+
+// 🎵 PLAYLIST DATA
+const playlists = {
+  Happy: [
+    { title: "Fun Song 🎉", url: "https://www.youtube.com/embed/kJQP7kiw5Fk" },
+    { title: "Dance Mood 💃", url: "https://www.youtube.com/embed/OPf0YbXqDm0" }
+  ],
+  Sad: [
+    { title: "Funny Cats 😭", url: "https://www.youtube.com/embed/J---aiyznGQ" },
+    { title: "Try not to laugh 😂", url: "https://www.youtube.com/embed/tgbNymZ7vqY" }
+  ],
+  Stressed: [
+    { title: "Calm Music 🌿", url: "https://www.youtube.com/embed/1ZYbU82GVz4" },
+    { title: "Relax Video 😌", url: "https://www.youtube.com/embed/2OEL4P1Rz04" }
+  ],
+  Calm: [
+    { title: "Lo-fi 🎧", url: "https://www.youtube.com/embed/5qap5aO4i9A" },
+    { title: "Chill Vibes 🌙", url: "https://www.youtube.com/embed/DWcJFNfaw9c" }
+  ]
+};
+
+// 🧠 MOOD DETECTION
+function analyzeDay() {
+  const text = document.getElementById("dayInput").value.toLowerCase();
+  let mood = "Calm";
+
+  if (text.match(/happy|good|great|excited/)) mood = "Happy";
+  else if (text.match(/sad|bad|cry|terrible/)) mood = "Sad";
+  else if (text.match(/stress|tired|overwhelmed/)) mood = "Stressed";
+
+  document.getElementById("detectedMood").innerText = "Mood: " + mood;
+
+  updateBattery(mood);
+  loadPlaylist(mood);
+}
+
+// 🔋 BATTERY
+function updateBattery(mood) {
+  const fill = document.getElementById("batteryFill");
+  const text = document.getElementById("batteryText");
+
+  let percent = 50;
+
+  if (mood === "Happy") percent = 90;
+  else if (mood === "Calm") percent = 70;
+  else if (mood === "Sad") percent = 40;
+  else if (mood === "Stressed") percent = 20;
+
+  fill.style.width = percent + "%";
+  text.innerText = percent + "% ⚡";
+}
+
+// 🎵 LOAD PLAYLIST
+function loadPlaylist(mood) {
+  const container = document.getElementById("playlist");
+  container.innerHTML = "";
+
+  playlists[mood].forEach(item => {
+    const div = document.createElement("div");
+    div.className = "bg-white p-3 rounded-xl cursor-pointer hover:scale-105 transition";
+    div.innerText = item.title;
+
+    div.onclick = () => {
+      document.getElementById("videoFrame").src = item.url;
+    };
+
+    container.appendChild(div);
+  });
+}
+
+// INIT
+loadPlaylist("Calm");
+
+</script>
+
+</body>
+</html>
